@@ -116,8 +116,12 @@ lint-dependencies:
 
 lint-server: lint-dependencies
 	$(PYTHON) -m flake8 elyra .github || (echo "Flake discovered errors"; exit 1)
+
+lint-server-org: lint-dependencies
+	$(PYTHON) -m flake8 elyra .github
 	@echo $(BLACK_CMD)
 	@$(BLACK_CMD) || (echo "Black formatting encountered issues.  Use 'make black-format' to apply the suggested changes."; exit 1)
+
 
 black-format: # Apply black formatter to Python source code
 	$(PYTHON) -m black .
