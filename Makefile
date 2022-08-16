@@ -115,7 +115,7 @@ lint-dependencies:
 	@$(PYTHON_PIP) install -q -r lint_requirements.txt
 
 lint-server: lint-dependencies
-	$(PYTHON) -m flake8 elyra .github || (echo "Flake discovered errors"; exit 1)
+	$(PYTHON) -m flake8 elyra .github
 
 lint-server-org: lint-dependencies
 	$(PYTHON) -m flake8 elyra .github
