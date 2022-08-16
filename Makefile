@@ -116,6 +116,7 @@ lint-dependencies:
 
 lint-server: lint-dependencies
 	$(PYTHON) -m flake8 elyra .github
+	@echo $(BLACK_CMD)
 
 lint-server-org: lint-dependencies
 	$(PYTHON) -m flake8 elyra .github
