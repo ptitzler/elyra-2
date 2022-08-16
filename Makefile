@@ -114,9 +114,12 @@ clean: purge uninstall ## Make a clean source tree and uninstall extensions
 lint-dependencies:
 	@$(PYTHON_PIP) install -q -r lint_requirements.txt
 
-lint-server: lint-dependencies
+lint-flake8:
 	$(PYTHON) -m flake8 elyra .github
+
+lint-server: lint-dependencies lint-flake8
 	@echo $(BLACK_CMD)
+	@$(BLACK_CMD) || (echo "Black formatting encountered issues.  Use 'make black-format' to apply the suggested changes."; exit 1)
 
 lint-server-org: lint-dependencies
 	$(PYTHON) -m flake8 elyra .github
