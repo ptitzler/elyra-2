@@ -33,6 +33,7 @@ from elyra.pipeline.pipeline_constants import DISABLE_NODE_CACHING
 from elyra.pipeline.pipeline_constants import ENV_VARIABLES
 from elyra.pipeline.pipeline_constants import KUBERNETES_POD_ANNOTATIONS
 from elyra.pipeline.pipeline_constants import KUBERNETES_SECRETS
+from elyra.pipeline.pipeline_constants import KUBERNETES_SHARED_MEM_SIZE
 from elyra.pipeline.pipeline_constants import KUBERNETES_TOLERATIONS
 from elyra.pipeline.pipeline_constants import MOUNTED_VOLUMES
 from elyra.util.kubernetes import is_valid_annotation_key
@@ -196,6 +197,62 @@ class DisableNodeCaching(ElyraProperty):
     def add_to_execution_object(self, runtime_processor: RuntimePipelineProcessor, execution_object: Any, **kwargs):
         """Add DisableNodeCaching info to the execution object for the given runtime processor"""
         runtime_processor.add_disable_node_caching(instance=self, execution_object=execution_object, **kwargs)
+
+
+class CustomSharedMemorySize(ElyraProperty):
+    """Configure a custom shared memory size for the pod that executes a node."""
+
+    property_id = KUBERNETES_SHARED_MEM_SIZE
+    generic = False
+    custom = True
+    _display_name = "Shared Memory Size"
+    _json_data_type = "object"
+    _ui_details_map = {
+        "size": {"display_name": "Memory Size", "placeholder": 1, "json_type": "number", "required": True},
+        "units": {"display_name": "Units", "json_type": "string", "required": True},
+    }
+
+    default_units = "Mi"
+    supported_units = ["G", "Gi", "M", default_units]
+
+    def __init__(self, size, units, **kwargs):
+        self.size = size
+        self.units = units
+
+    @classmethod
+    def create_instance(cls, prop_id: str, value: Optional[Any]) -> CustomSharedMemorySize:
+        # create a CustomSharedMemorySize instance
+        size, units = cls.unpack(value, "size", "units")
+        return CustomSharedMemorySize(size=size, units=units)
+
+    @classmethod
+    def get_schema(cls) -> Dict[str, Any]:
+        """Build the JSON schema for an Elyra-owned component property"""
+        schema = super().get_schema()
+        schema["properties"]["size"]["minimum"] = 1
+        schema["properties"]["size"]["default"] = 1
+        schema["properties"]["units"]["enum"] = CustomSharedMemorySize.supported_units
+        schema["properties"]["units"]["default"] = CustomSharedMemorySize.default_units
+        return schema
+
+    def add_to_execution_object(self, runtime_processor: RuntimePipelineProcessor, execution_object: Any, **kwargs):
+        """Add CustomSharedMemorySize info to the execution object for the given runtime processor"""
+        runtime_processor.add_custom_shared_memory_size(instance=self, execution_object=execution_object, **kwargs)
+
+    def get_all_validation_errors(self) -> List[str]:
+        """Verify instance properties"""
+        validation_errors = []
+        # verify that size is a non-zero positive number
+        try:
+            size = int(self.size)
+            if size <= 1:
+                raise ValueError()
+        except ValueError:
+            validation_errors.append("Shared memory size must be a positive number.")
+        # verify units is one of the pre-defined constants
+        if self.units not in CustomSharedMemorySize.supported_units:
+            validation_errors.append(f"Units must be one of {CustomSharedMemorySize.units}")
+        return validation_errors
 
 
 class ElyraPropertyListItem(ElyraProperty):
