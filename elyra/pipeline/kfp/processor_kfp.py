@@ -779,7 +779,8 @@ class KfpPipelineProcessor(RuntimePipelineProcessor):
 
     def add_custom_shared_memory_size(self, instance: CustomSharedMemorySize, execution_object: Any, **kwargs) -> None:
         """Add CustomSharedMemorySize info to the execution object for the given runtime processor"""
-        if instance.size is None:
+
+        if not instance.size:
             return
 
         volume = V1Volume(
@@ -836,6 +837,7 @@ class KfpPipelineProcessor(RuntimePipelineProcessor):
             pipeline_constants.KUBERNETES_POD_ANNOTATIONS,
             pipeline_constants.KUBERNETES_TOLERATIONS,
             pipeline_constants.DISABLE_NODE_CACHING,
+            pipeline_constants.KUBERNETES_SHARED_MEM_SIZE,
         ]
 
 

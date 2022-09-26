@@ -203,12 +203,12 @@ class CustomSharedMemorySize(ElyraProperty):
     """Configure a custom shared memory size for the pod that executes a node."""
 
     property_id = KUBERNETES_SHARED_MEM_SIZE
-    generic = False
+    generic = True
     custom = True
     _display_name = "Shared Memory Size"
     _json_data_type = "object"
     _ui_details_map = {
-        "size": {"display_name": "Memory Size", "placeholder": 1, "json_type": "number", "required": True},
+        "size": {"display_name": "Memory Size", "json_type": "number", "required": False},
         "units": {"display_name": "Units", "json_type": "string", "required": True},
     }
 
@@ -229,8 +229,8 @@ class CustomSharedMemorySize(ElyraProperty):
     def get_schema(cls) -> Dict[str, Any]:
         """Build the JSON schema for an Elyra-owned component property"""
         schema = super().get_schema()
-        schema["properties"]["size"]["minimum"] = 1
-        schema["properties"]["size"]["default"] = 1
+        schema["properties"]["size"]["minimum"] = 0
+        schema["properties"]["size"]["default"] = 0
         schema["properties"]["units"]["enum"] = CustomSharedMemorySize.supported_units
         schema["properties"]["units"]["default"] = CustomSharedMemorySize.default_units
         return schema
@@ -244,9 +244,10 @@ class CustomSharedMemorySize(ElyraProperty):
         validation_errors = []
         # verify that size is a non-zero positive number
         try:
-            size = int(self.size)
-            if size <= 1:
-                raise ValueError()
+            if self.size is not None:
+                size = int(self.size)
+                if size <= 1:
+                    raise ValueError()
         except ValueError:
             validation_errors.append("Shared memory size must be a positive number.")
         # verify units is one of the pre-defined constants
