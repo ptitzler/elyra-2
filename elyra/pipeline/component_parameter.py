@@ -200,18 +200,27 @@ class DisableNodeCaching(ElyraProperty):
 
 
 class CustomSharedMemorySize(ElyraProperty):
-    """Configure a custom shared memory size for the pod that executes a node."""
+    """
+    Configure a custom shared memory size for the pod that executes a node. A custom
+    value is assigned if the size property value is a number greater than zero.
+    """
 
     property_id = KUBERNETES_SHARED_MEM_SIZE
-    generic = True
-    custom = True
+    generic = True  # custom shared mem size applies to generic components
+    custom = True  # custom shared mem size applies to custom components
     _display_name = "Shared Memory Size"
     _json_data_type = "object"
     _ui_details_map = {
-        "size": {"display_name": "Memory Size", "json_type": "number", "required": False},
+        "size": {"display_name": "Memory Size", "json_type": "number", "placeholder": 0, "required": True},
         "units": {"display_name": "Units", "json_type": "string", "required": True},
     }
 
+    # https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#meaning-of-memory
+    # Only allow for selection of 'reasonable' units
+    # 'M' (Megabytes): 1000^2  = 1,000,000 bytes
+    # 'Mi' (Mebibytes): 1024^2 = 1,048,576 bytes
+    # 'G' (Gigabytes): 1000^3  = 1,000,000,000 bytes
+    # 'Gi' (Gibibytes): 1024^3 = 1,073,741,824 bytes
     default_units = "Mi"
     supported_units = ["G", "Gi", "M", default_units]
 
@@ -230,6 +239,7 @@ class CustomSharedMemorySize(ElyraProperty):
         """Build the JSON schema for an Elyra-owned component property"""
         schema = super().get_schema()
         schema["properties"]["size"]["minimum"] = 0
+        # default value indicates no custom value
         schema["properties"]["size"]["default"] = 0
         schema["properties"]["units"]["enum"] = CustomSharedMemorySize.supported_units
         schema["properties"]["units"]["default"] = CustomSharedMemorySize.default_units
@@ -244,16 +254,25 @@ class CustomSharedMemorySize(ElyraProperty):
         validation_errors = []
         # verify that size is a non-zero positive number
         try:
-            if self.size is not None:
+            if self.size:
                 size = int(self.size)
-                if size <= 1:
+                if size < 0:
                     raise ValueError()
         except ValueError:
-            validation_errors.append("Shared memory size must be a positive number.")
+            validation_errors.append("Custom shared memory size must be a positive number.")
         # verify units is one of the pre-defined constants
         if self.units not in CustomSharedMemorySize.supported_units:
             validation_errors.append(f"Units must be one of {CustomSharedMemorySize.units}")
         return validation_errors
+
+    def get_value_for_display(self) -> Dict[str, Any]:
+        """Get a representation of the instance to display in UI error messages."""
+        return self.to_dict()
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert instance to a dict with relevant class attributes."""
+        dict_repr = {attr: getattr(self, attr, None) for attr in self._ui_details_map}
+        return dict_repr
 
 
 class ElyraPropertyListItem(ElyraProperty):
