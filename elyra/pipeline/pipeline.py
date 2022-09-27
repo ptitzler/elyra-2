@@ -22,7 +22,6 @@ from typing import Dict
 from typing import List
 from typing import Optional
 
-from elyra.pipeline.component_parameter import CustomSharedMemorySize
 from elyra.pipeline.component_parameter import ElyraProperty
 from elyra.pipeline.component_parameter import ElyraPropertyList
 from elyra.pipeline.component_parameter import EnvironmentVariable
@@ -34,7 +33,6 @@ from elyra.pipeline.pipeline_constants import DISABLE_NODE_CACHING
 from elyra.pipeline.pipeline_constants import ENV_VARIABLES
 from elyra.pipeline.pipeline_constants import KUBERNETES_POD_ANNOTATIONS
 from elyra.pipeline.pipeline_constants import KUBERNETES_SECRETS
-from elyra.pipeline.pipeline_constants import KUBERNETES_SHARED_MEM_SIZE
 from elyra.pipeline.pipeline_constants import KUBERNETES_TOLERATIONS
 from elyra.pipeline.pipeline_constants import MOUNTED_VOLUMES
 from elyra.pipeline.pipeline_constants import RUNTIME_IMAGE
@@ -118,9 +116,6 @@ class Operation(object):
         # target runtime environment, even if it was executed before.
         self._disable_node_caching = self.get_elyra_owned_property(DISABLE_NODE_CACHING)
 
-        # set custom shared memory size
-        self._kubernetes_shared_memory_size = self.get_elyra_owned_property(KUBERNETES_SHARED_MEM_SIZE)
-
         # Scrub the inputs and outputs lists
         self._component_params["inputs"] = Operation._scrub_list(component_params.get("inputs", []))
         self._component_params["outputs"] = Operation._scrub_list(component_params.get("outputs", []))
@@ -185,13 +180,6 @@ class Operation(object):
         Returns False if cached output must not be used (instead of executing the op to produce it)
         """
         return self._disable_node_caching
-
-    @property
-    def kubernetes_shared_memory_size(self) -> Optional[CustomSharedMemorySize]:
-        """
-        Returns a CustomSharedMemorySize if one needs to be applied. None otherwise.
-        """
-        return self._kubernetes_shared_memory_size
 
     @property
     def inputs(self) -> Optional[List[str]]:

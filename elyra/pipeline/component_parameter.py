@@ -215,6 +215,7 @@ class CustomSharedMemorySize(ElyraProperty):
         "units": {"display_name": "Units", "json_type": "string", "required": True},
     }
 
+    default_size = 0
     # https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#meaning-of-memory
     # Only allow for selection of 'reasonable' units
     # 'M' (Megabytes): 1000^2  = 1,000,000 bytes
@@ -238,9 +239,9 @@ class CustomSharedMemorySize(ElyraProperty):
     def get_schema(cls) -> Dict[str, Any]:
         """Build the JSON schema for an Elyra-owned component property"""
         schema = super().get_schema()
-        schema["properties"]["size"]["minimum"] = 0
+        schema["properties"]["size"]["minimum"] = CustomSharedMemorySize.default_size
         # default value indicates no custom value
-        schema["properties"]["size"]["default"] = 0
+        schema["properties"]["size"]["default"] = CustomSharedMemorySize.default_size
         schema["properties"]["units"]["enum"] = CustomSharedMemorySize.supported_units
         schema["properties"]["units"]["default"] = CustomSharedMemorySize.default_units
         return schema
@@ -262,7 +263,7 @@ class CustomSharedMemorySize(ElyraProperty):
             validation_errors.append("Custom shared memory size must be a positive number.")
         # verify units is one of the pre-defined constants
         if self.units not in CustomSharedMemorySize.supported_units:
-            validation_errors.append(f"Units must be one of {CustomSharedMemorySize.units}")
+            validation_errors.append(f"Units must be one of {CustomSharedMemorySize.supported_units}")
         return validation_errors
 
     def get_value_for_display(self) -> Dict[str, Any]:
@@ -273,6 +274,10 @@ class CustomSharedMemorySize(ElyraProperty):
         """Convert instance to a dict with relevant class attributes."""
         dict_repr = {attr: getattr(self, attr, None) for attr in self._ui_details_map}
         return dict_repr
+
+    def is_empty_instance(self) -> bool:
+        """Returns a boolean indicating whether this instance is considered a no-op."""
+        return self.size == CustomSharedMemorySize.default_size and self.units == CustomSharedMemorySize.default_units
 
 
 class ElyraPropertyListItem(ElyraProperty):
